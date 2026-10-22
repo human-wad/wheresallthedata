@@ -115,14 +115,25 @@ main { position: relative; z-index: 1; }
 .touch-only { display: none; }
 @media (pointer: coarse) { .touch-only { display: inline; } .kbd-only { display: none; } }
 
+/* a trapezoid, narrow at the top. Two clipped layers: indigo edge behind, slab inset 2px in front.
+   Side padding grows with the slant so text never crosses the sloped edges. */
 .ethos {
+  --slant: clamp(18px, 6vw, 64px);
+  --pad: clamp(24px, 5vw, 44px);
+  position: relative;
+  isolation: isolate;
   max-width: 62ch;
   margin: 0 auto 10vh;
-  padding: clamp(24px, 5vw, 44px);
-  background: var(--slab);
-  border: 2px solid var(--indigo);
-  box-shadow: 6px 6px 0 var(--deep);
+  padding: calc(var(--pad) + 8px) calc(var(--pad) + var(--slant)) var(--pad);
 }
+.ethos::before, .ethos::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  clip-path: polygon(var(--slant) 0, calc(100% - var(--slant)) 0, 100% 100%, 0 100%);
+}
+.ethos::before { inset: 0; background: var(--indigo); }
+.ethos::after  { inset: 2px; background: rgba(0, 0, 0, 0.86); }
 .label {
   font-family: var(--face-pixel);
   font-size: 0.72rem;
