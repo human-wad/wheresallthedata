@@ -12,7 +12,7 @@
   Engine   Chocolate Doom, ported to WebAssembly by Cloudflare (doom-wasm).
            Built from github.com/cloudflare/doom-wasm @ 65e0d3ae2ffa604155
            eebd96ed40da6567bd08f4 with Emscripten 6.0.12 on 2026-10-22.
-           Three small deviations from upstream, all in this tree's build:
+           Five small deviations from upstream, all in this tree's build:
              1. EXTRA_EXPORTED_RUNTIME_METHODS renamed to the modern
                 EXPORTED_RUNTIME_METHODS (removed in current Emscripten).
              2. LEGACY_GL_EMULATION / PROXY_POSIX_SOCKETS dropped (same).
@@ -62,6 +62,17 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
   image-rendering: crisp-edges;
   cursor: crosshair;
 }
+#load {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  margin: 0; padding: 16px;
+  font: 14px/1.6 ui-monospace, "Courier New", monospace;
+  letter-spacing: 0.08em;
+  color: #a49bd1;
+  text-align: center;
+  pointer-events: none;
+}
+#load[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -69,6 +80,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
   <!-- id must be "canvas": the engine's F-key fullscreen targets #canvas -->
   <canvas id="canvas" tabindex="-1"></canvas>
 </div>
+<p id="load" role="status">loading doom1.wad</p>
 
 <script>
 /* Fullscreen needs one user gesture; take it on the first click or key.
@@ -82,13 +94,44 @@ function goFullscreen() {
 addEventListener("pointerdown", goFullscreen);
 addEventListener("keydown", goFullscreen);
 
-var commonArgs = ["-iwad", "doom1.wad", "-window", "-nogui", "-nomusic",
+/* Fetch the WAD ourselves (in parallel with the engine) so the screen can
+   show progress instead of sitting black while ~6.5 MB arrives. */
+var loadEl = document.getElementById("load");
+function mb(n) { return (n / 1048576).toFixed(1); }
+var wadPromise = fetch("doom1.wad").then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    var total = +res.headers.get("content-length") || 0;
+    if (!res.body || !res.body.getReader) return res.arrayBuffer();
+    var reader = res.body.getReader(), chunks = [], got = 0;
+    function pump() {
+        return reader.read().then(function (r) {
+            if (r.done) {
+                var out = new Uint8Array(got), off = 0;
+                chunks.forEach(function (c) { out.set(c, off); off += c.length; });
+                return out.buffer;
+            }
+            chunks.push(r.value); got += r.value.length;
+            loadEl.textContent = "doom1.wad  " + mb(got) + (total >= got ? " / " + mb(total) : "") + " MB";
+            return pump();
+        });
+    }
+    return pump();
+});
+
+var commonArgs =["-iwad", "doom1.wad", "-window", "-nogui", "-nomusic",
                   "-config", "default.cfg"];
 
 var Module = {
     arguments: commonArgs,
     preRun: [function () {
-        Module.FS.createPreloadedFile("", "doom1.wad", "doom1.wad", true, true);
+        Module.addRunDependency("wad");
+        wadPromise.then(function (buf) {
+            Module.FS.writeFile("doom1.wad", new Uint8Array(buf));
+            loadEl.textContent = "starting doom";
+            Module.removeRunDependency("wad");
+        }, function (err) {
+            loadEl.textContent = "couldn't load doom1.wad (" + err.message + "). reload to try again.";
+        });
         Module.FS.createPreloadedFile("", "default.cfg", "default.cfg", true, true);
     }],
     print: function (text) { console.log(text); },
@@ -99,7 +142,7 @@ var Module = {
     totalDependencies: 0,
     monitorRunDependencies: function (left) {
         this.totalDependencies = Math.max(this.totalDependencies, left);
-        if (!left) console.log("doom: ready");
+        if (!left) { console.log("doom: ready"); loadEl.hidden = true; }
     },
     canvas: (function () {
         var canvas = document.getElementById("canvas");
