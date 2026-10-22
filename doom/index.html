@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where's All the Data? — Doom</title>
+<!--
+  ============================================================================
+  DOOM, BUILT FROM SOURCE, RUNNING ENTIRELY IN YOUR BROWSER. No page chrome:
+  the canvas is the whole screen.
+
+  Engine   Chocolate Doom, ported to WebAssembly by Cloudflare (doom-wasm).
+           Built from github.com/cloudflare/doom-wasm @ 65e0d3ae2ffa604155
+           eebd96ed40da6567bd08f4 with Emscripten 6.0.12 on 2026-10-22.
+           Three small deviations from upstream, all in this tree's build:
+             1. EXTRA_EXPORTED_RUNTIME_METHODS renamed to the modern
+                EXPORTED_RUNTIME_METHODS (removed in current Emscripten).
+             2. LEGACY_GL_EMULATION / PROXY_POSIX_SOCKETS dropped (same).
+             3. src/doomtype.h: C23 makes true/false keywords, so the
+                boolean enum needed a __STDC_VERSION__ guard.
+             4. src/doom/r_defs.h: spriteframe_t.rotate changed boolean →
+                short. The field doubles as a -1 sentinel after
+                memset(sprtemp,-1), and a 1-byte bool turns that 0xFF into
+                poison under -O3 with current clang — the engine died on the
+                first sprite (TROO). Same change as upstream Chocolate Doom.
+             5. Debug info dropped (`-g` / `-gsource-map`) so the .wasm
+                ships lean (7.7 MB -> 2.3 MB) and binaryen optimizes
+                fully.
+           License: GNU GPL v2. Corresponding source:
+             https://github.com/chocolate-doom/chocolate-doom
+             https://github.com/cloudflare/doom-wasm
+           (Same links in doom/README.md, which ships with this page.)
+  IWAD     doom1.wad — DOOM shareware v1.9. id Software has always
+           permitted redistribution of the shareware WAD; it was fetched
+           from Software Heritage, content-addressed by its SHA-1, and
+           verified against published checksums (wad-archive.com):
+             md5    f0cefca49926d00903cf57551d901abe
+             sha1   5b2e249b9c5133ec987b3ea77596381dc0d6bc1d
+             sha256 1d7d43be501e67d927e415e0b8f3e29c3bf33075e859721816f652a526cac771
+           The WAD never loads unless someone opens this page.
+  Hosting  Fully static. Single-threaded build (USE_PTHREADS=0), so no
+           COOP/COEP headers. Only requirement: serve .wasm as
+           application/wasm, which every static host already does.
+  ============================================================================
+-->
+<style>
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+
+/* the stage fills the window; the canvas fills the stage at exact 4:3 so
+   mouse coords map 1:1 (letterboxing happens in the page, not in the element) */
+#stage {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: #000;
+}
+#canvas {
+  display: block;
+  width: min(100vw, calc(100vh * 4 / 3));
+  height: min(100vh, calc(100vw * 3 / 4));
+  background: #000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: crosshair;
+}
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- id must be "canvas": the engine's F-key fullscreen targets #canvas -->
+  <canvas id="canvas" tabindex="-1"></canvas>
+</div>
+
+<script>
+/* Fullscreen needs one user gesture; take it on the first click or key.
+   The engine's own F key calls emscripten_request_fullscreen("#canvas"). */
+function goFullscreen() {
+    if (document.fullscreenElement) return;
+    var el = document.getElementById("stage");
+    var p = el.requestFullscreen && el.requestFullscreen();
+    if (p && p.catch) p.catch(function () {});
+}
+addEventListener("pointerdown", goFullscreen);
+addEventListener("keydown", goFullscreen);
+
+var commonArgs = ["-iwad", "doom1.wad", "-window", "-nogui", "-nomusic",
+                  "-config", "default.cfg"];
+
+var Module = {
+    arguments: commonArgs,
+    preRun: [function () {
+        Module.FS.createPreloadedFile("", "doom1.wad", "doom1.wad", true, true);
+        Module.FS.createPreloadedFile("", "default.cfg", "default.cfg", true, true);
+    }],
+    print: function (text) { console.log(text); },
+    printErr: function (text) {
+        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+        console.error(text);
+    },
+    totalDependencies: 0,
+    monitorRunDependencies: function (left) {
+        this.totalDependencies = Math.max(this.totalDependencies, left);
+        if (!left) console.log("doom: ready");
+    },
+    canvas: (function () {
+        var canvas = document.getElementById("canvas");
+        canvas.addEventListener("webglcontextlost", function (e) {
+            console.error("webgl context lost. reload the page.");
+            e.preventDefault();
+        }, false);
+        return canvas;
+    })(),
+};
+
+window.onerror = function (event) {
+    console.error("exception thrown:", event);
+};
+</script>
+<script src="websockets-doom.js"></script>
+</body>
+</html>
