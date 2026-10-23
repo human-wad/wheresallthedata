@@ -164,6 +164,10 @@ main { position: relative; z-index: 1; }
 }
 .ring img { width: 88px; height: 31px; image-rendering: pixelated; display: block; }
 .ring span { font-size: 0.9rem; color: var(--muted); min-width: 0; }
+.walk { display: flex; gap: 18px; width: 100%; font-family: var(--face-pixel); font-size: 0.72rem; letter-spacing: 0.1em; }
+.walk a { color: var(--sky); text-decoration: none; }
+.walk a:hover { color: var(--pink); }
+.walk a:focus-visible { outline: 2px dashed var(--pink); outline-offset: 3px; }
 
 footer {
   position: relative; z-index: 1;
@@ -209,6 +213,11 @@ footer a { color: inherit; }
         <img src="data:image/png;base64,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" alt="human.wad">
       </a>
       <span>The webring lives at <a href="https://human.wheresallthedata.fyi">human.wheresallthedata.fyi</a>.</span>
+      <nav class="walk" aria-label="human.wad webring">
+        <a href="https://human.wheresallthedata.fyi/prev/?from=wheresallthedata">&larr; prev</a>
+        <a href="https://human.wheresallthedata.fyi/random/?from=wheresallthedata">random</a>
+        <a href="https://human.wheresallthedata.fyi/next/?from=wheresallthedata">next &rarr;</a>
+      </nav>
     </div>
   </section>
 </main>
