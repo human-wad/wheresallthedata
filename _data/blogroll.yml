@@ -1,0 +1,6 @@
+# Posts that live on our own sites. Newest at the top.
+# `by` is a key from authors.yml, or just a name.
+- title: Unvibecodable
+  url: https://datavorous.github.io/blog/unvibecodable.html
+  by: datavorous
+  date: 2026-09-19

@@ -1,0 +1,22 @@
+# GitHub Pages builds this site with Jekyll. Only the blog uses it:
+# index.html and doom/ have no front matter, so they are copied as they are.
+title: where's all the data?
+description: Writing from human.wad, the people behind wheresallthedata.fyi.
+url: https://wheresallthedata.fyi
+permalink: /blog/:year/:title/
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+plugins:
+  - jekyll-feed
+feed:
+  path: blog/feed.xml
+exclude:
+  - README.md
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post

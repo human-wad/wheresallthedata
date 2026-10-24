@@ -1,0 +1,38 @@
+---
+layout: wad
+title: blog
+description: Careful investigations of small things, written up by the people of human.wad.
+---
+<h1>the blog</h1>
+<p class="lede">Careful investigations of small things, written up. Some are written here, together; the rest live on our own sites.</p>
+
+<section aria-labelledby="here-h">
+  <h2 class="shelf" id="here-h">written here</h2>
+  {% if site.posts.size > 0 %}
+  <ol class="posts" reversed>
+    {% for post in site.posts %}
+    <li>
+      <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%Y-%m-%d" }}</time>
+      <a class="title" href="{{ post.url }}">{{ post.title }}</a>
+      <span class="byline">by {% include byline.html who=post %}</span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="empty">Nothing yet. The first one is still being dug up.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="else-h">
+  <h2 class="shelf" id="else-h">elsewhere</h2>
+  <ul class="roll">
+    {% for item in site.data.blogroll %}
+    {% assign parts = item.url | split: "/" %}
+    {% assign who = site.data.authors[item.by] %}
+    <li>
+      <img src="https://icons.duckduckgo.com/ip3/{{ parts[2] }}.ico" alt="" width="16" height="16" loading="lazy">
+      <span><a href="{{ item.url }}">{{ item.title }}</a> <span class="by">by {% if who %}{{ who.name }}{% else %}{{ item.by }}{% endif %}</span></span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
