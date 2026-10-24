@@ -1,11 +1,7 @@
 ---
 layout: wad
 ---
-<article class="post">
-  <p class="meta"><a href="/blog/">blog</a> // <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%-d %B %Y" }}</time></p>
-  <h1>{{ page.title }}</h1>
-  <p class="byline">by {% include byline.html who=page %}</p>
-  <div class="prose">
+<p class="label">{{ page.date | date: "%-d %b %Y" }}</p>
+<h1>{{ page.title }}</h1>
+<p class="dim">{% include byline.html who=page %}</p>
 {{ content }}
-  </div>
-</article>

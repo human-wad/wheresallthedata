@@ -2,5 +2,5 @@
 {%- for a in names -%}
   {%- assign p = site.data.authors[a] -%}
   {%- if p -%}<a href="{{ p.uri }}">{{ p.name }}</a>{%- else -%}{{ a }}{%- endif -%}
-  {%- unless forloop.last %} &amp; {% endunless -%}
+  {%- unless forloop.last %} and {% endunless -%}
 {%- endfor -%}
